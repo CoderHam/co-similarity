@@ -18,11 +18,22 @@ def extract_embedding(sentences: List[str]):
     return response.embeddings
 
 # Extract sentence embeddings and store them in .npy files
+# Store sentences in csv file
 records = pd.read_csv("bgg_2000.csv")
+sentence_df = None
 progress_bar = tqdm(records.iterrows())
 for idx, record in progress_bar:
     progress_bar.set_description("Extracting embedding for game %s" % idx)
     description = record['description']
     sentences = tokenize.sent_tokenize(description)
+    df = pd.DataFrame({'uid': [idx] * len(sentences), "sentence": sentences})
+    if sentence_df is None:
+        sentence_df = df
+    else:
+        sentence_df = pd.concat([sentence_df, df])
+
     embeddings = extract_embedding(sentences)
     embeddings = np.save('%s.npy' % idx, embeddings)
+
+# Save all sentences to file
+sentence_df.to_csv("bgg_2000_sentences.csv", index=False)
