@@ -3,3 +3,4 @@ pandas
 tqdm
 cohere
 faiss-gpu
+jupyterlab
