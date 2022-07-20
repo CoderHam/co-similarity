@@ -37,3 +37,14 @@ for idx, record in progress_bar:
 
 # Save all sentences to file
 sentence_df.to_csv("bgg_2000_sentences.csv", index=False)
+
+# Save all embeddings into a single file
+sentence_embeddings = None
+for idx in range(records.shape[0]):
+    embedding = np.load('data/%s.npy' % idx)
+    if sentence_embeddings is None:
+        sentence_embeddings = embedding
+    else:
+        sentence_embeddings = np.concatenate([sentence_embeddings, embedding])
+
+np.save('data/all_embed.npy', sentence_embeddings)
