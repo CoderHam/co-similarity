@@ -68,7 +68,7 @@ class BoardGamesGeekScraper(object):
         merged_records = pd.concat(all_records)
 
         # Save all to file
-        merged_records.to_csv("bgg_first_20.csv", index=False)
+        merged_records.to_csv("bgg_2000.csv", index=False)
 
 BGG = BoardGamesGeekScraper()
 BGG.scrape_info()
