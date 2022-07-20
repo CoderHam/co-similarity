@@ -25,7 +25,7 @@ def run_knn(sentence_embeds, query_embeds, k=5):
     return I, D
 
 # K defaults to 5
-def get_similar(game_id=0, k=5, select_sentence=False, verbose=False):
+def get_similar_from_game(game_id=0, k=5, select_sentence=False, verbose=False):
     if verbose:
         print("%s\n-----\n" % records.loc[game_id, 'name'])
         query_sentences = sentence_df.loc[sentence_df['uid'] == game_id, 'sentence'].to_list()
@@ -57,6 +57,18 @@ def get_similar(game_id=0, k=5, select_sentence=False, verbose=False):
 
 # import timeit
 # num_runs = 10
-# duration = timeit.Timer(get_similar).timeit(number = num_runs)
+# duration = timeit.Timer(get_similar_from_game).timeit(number = num_runs)
 # print(f'On average it took {duration*1000/num_runs} ms')
 # 126 ms with K = 5
+
+def get_similar_from_embeds(query_embeddings=0, k=5):
+    query_embeddings = np.array(query_embeddings).astype(np.float32)
+
+    many_indicies, many_dists = run_knn(sentence_embeddings, query_embeddings, k)
+
+    results = []
+    for indices in many_indicies:
+        uids = sentence_df.loc[indices, 'uid'].to_list()
+        results.extend(uids)
+
+    return list(set(results))
