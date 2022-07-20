@@ -33,7 +33,7 @@ for idx, record in progress_bar:
         sentence_df = pd.concat([sentence_df, df])
 
     embeddings = extract_embedding(sentences)
-    np.save('%s.npy' % idx, embeddings)
+    np.save('data/%s.npy' % idx, embeddings)
 
 # Save all sentences to file
 sentence_df.to_csv("bgg_2000_sentences.csv", index=False)
