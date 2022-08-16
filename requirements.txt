@@ -4,3 +4,4 @@ tqdm
 cohere
 faiss-gpu
 jupyterlab
+streamlit

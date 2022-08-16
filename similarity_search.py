@@ -9,8 +9,8 @@ records = pd.read_csv("bgg_2000.csv")
 sentence_df = pd.read_csv("bgg_2000_sentences.csv")
 sentence_embeddings = np.load('data/all_embed.npy').astype(np.float32)
 
-# Create and save index
-def create_and_save_index(use_gpu=False):
+# Create index (can also run on GPU)
+def create_index(use_gpu=False):
     dims = sentence_embeddings.shape[1]
 
     if use_gpu:
@@ -25,10 +25,10 @@ def create_and_save_index(use_gpu=False):
     chunk = faiss.serialize_index(index)
     return chunk
 
-# Load index (on GPU)
-res = faiss.StandardGpuResources()
-cpu_index = faiss.deserialize_index(create_and_save_index())
-index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+# Load index (can also run on GPU)
+# res = faiss.StandardGpuResources()
+index = faiss.deserialize_index(create_index(use_gpu=False))
+# index = faiss.index_cpu_to_gpu(res, 0, index)
 
 # Get KNN using faiss
 # I is the index for the K nearest neighbors
