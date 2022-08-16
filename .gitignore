@@ -131,3 +131,6 @@ dmypy.json
 # Misc
 *.npy
 *.tar.gz
+
+# streamlit secrets
+secrets.toml
