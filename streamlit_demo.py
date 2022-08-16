@@ -5,7 +5,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 import cohere
-import similarity_search
 
 bg_df = pd.read_csv("bgg_2000.csv")
 name_list = bg_df.loc[:, 'name'].to_list()
@@ -38,6 +37,7 @@ def result_box(game_names, img_urls, game_urls):
     st.markdown(get_html_code(game_names, img_urls, game_urls), unsafe_allow_html=True)
 
 def getSimilarFromGame():
+    import similarity_search
     name_query = st.session_state.game_name
     st.session_state.game_name = ''
 
@@ -58,6 +58,7 @@ def getSimilarFromGame():
     result_box(game_names, img_urls, game_urls)
 
 def getSimilarFromDescription():
+    import similarity_search
     game_description = st.session_state.game_description
     st.session_state.game_description = ''
 
