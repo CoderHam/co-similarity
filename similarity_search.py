@@ -9,19 +9,32 @@ records = pd.read_csv("bgg_2000.csv")
 sentence_df = pd.read_csv("bgg_2000_sentences.csv")
 sentence_embeddings = np.load('data/all_embed.npy').astype(np.float32)
 
+# Create and save index
+def create_and_save_index(use_gpu=False):
+    dims = sentence_embeddings.shape[1]
+
+    if use_gpu:
+        res = faiss.StandardGpuResources()
+        index = faiss.GpuIndexIVFFlat(res, dims, 32, faiss.METRIC_L2)
+    else:
+        quantizer = faiss.IndexFlatL2(dims)
+        index = faiss.IndexIVFFlat(quantizer, dims, 32, faiss.METRIC_L2)
+    index.train(sentence_embeddings)
+    index.add(sentence_embeddings)
+
+    chunk = faiss.serialize_index(index)
+    return chunk
+
+# Load index (on GPU)
+res = faiss.StandardGpuResources()
+cpu_index = faiss.deserialize_index(create_and_save_index())
+index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+
 # Get KNN using faiss
 # I is the index for the K nearest neighbors
 # D is the distance metric for the K nearest neighbors
-def run_knn(sentence_embeds, query_embeds, k=5):
-    dims = sentence_embeddings.shape[1]
-
-    # sentence_embeds[:, 0] += np.arange(sentence_embeds.shape[0]) / 1000.
-    # query_embeds[:, 0] += np.arange(query_embeds.shape[0]) / 1000.
-
-    index_flat = faiss.IndexFlatL2(dims)
-    index_flat.add(sentence_embeds)
-    D, I = index_flat.search(query_embeds, k)
-
+def run_knn(query_embeds, k=5):
+    D, I = index.search(query_embeds, k)
     return I, D
 
 # K defaults to 5
@@ -37,38 +50,39 @@ def get_similar_from_game(game_id=0, k=5, select_sentence=False, verbose=False):
     # if no sentence is selected then run for all sentences
     if select_sentence:
         query_id = int(input())
-        many_indicies, many_dists = run_knn(sentence_embeddings, query_embeddings[query_id:query_id+1], k)
+        many_indicies, many_dists = run_knn(query_embeddings[query_id:query_id+1], k)
     else:
-        many_indicies, many_dists = run_knn(sentence_embeddings, query_embeddings, k)
+        many_indicies, many_dists = run_knn(query_embeddings, k)
 
-    results = []
-    for indices in many_indicies:
+    result_uids = []
+    result_dists = []
+    for indices, dists in zip(many_indicies, many_dists):
         uids = sentence_df.loc[indices, 'uid'].to_list()
+        # filter out uid of game being queried for
+        result_uids.extend([uid for uid in uids if uid!= game_id])
+        result_dists.extend([dist for dist, uid in zip(dists, uids) if uid!= game_id])
 
-        # filter out uid of game being queried
-        filtered_uids = list(filter(lambda uid: uid != game_id, uids))
-        results.extend(filtered_uids)
-
-    # TODO Take distance into account
-    # TODO set does not preserve order
-    return list(set(results))
+    sorted_uids = [x for _, x in sorted(zip(result_dists, result_uids))]
+    return sorted_uids[:k]
 
 # Demo of usage in jupyter notebook
-
 # import timeit
 # num_runs = 10
 # duration = timeit.Timer(get_similar_from_game).timeit(number = num_runs)
 # print(f'On average it took {duration*1000/num_runs} ms')
-# 126 ms with K = 5
+# 6 ms with K = 5
 
 def get_similar_from_embeds(query_embeddings=0, k=5):
     query_embeddings = np.array(query_embeddings).astype(np.float32)
 
-    many_indicies, many_dists = run_knn(sentence_embeddings, query_embeddings, k)
+    many_indicies, many_dists = run_knn(query_embeddings, k)
 
-    results = []
-    for indices in many_indicies:
+    result_uids = []
+    result_dists = []
+    for indices, dists in zip(many_indicies, many_dists):
         uids = sentence_df.loc[indices, 'uid'].to_list()
-        results.extend(uids)
+        result_uids.extend(uids)
+        result_dists.extend(dists)
 
-    return list(set(results))
+    sorted_uids = [x for _, x in sorted(zip(result_dists, result_uids))]
+    return sorted_uids[:k]
